@@ -1,0 +1,12 @@
+.polzunokContainer {
+    width: 400px;
+    height: 20px;
+    border: 1px #000 solid;
+    margin-top: 10px;
+}
+
+.polzunok {
+    width: 1px;
+    height: 100%;
+    background-color: #e24e4e;
+}
