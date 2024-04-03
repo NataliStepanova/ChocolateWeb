@@ -1,13 +1,13 @@
 import './App.css';
-import InputSection from './components/Input/InputSection';
-// import SuperButton from './components/SuperButton';
+import Calculator from './components/Calculator/Calculator';
+import ArchiveOfRecipes from './components/Archive OfRecipes/ArchiveOfRecipes';
 
 function App() {
   return (
     <>
-    <h3>Введите количество ингредиентов</h3>
-    <InputSection />
-    
+    <h2 className="headerCalc">Введите количество ингредиентов</h2>
+    <Calculator />
+    <ArchiveOfRecipes/>
     </>
   );
 }

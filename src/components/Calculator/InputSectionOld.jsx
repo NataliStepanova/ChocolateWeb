@@ -5,7 +5,6 @@ const INGREDIENTS = [
     {id:'kakao', label:'Какао %', value: 0}, 
     {id:'maslo', label:'Какао-масло %', value: 0}, 
 ]
-//const KAKAOFATPERCENT = 53
 
 
 export default function InputSection() {
