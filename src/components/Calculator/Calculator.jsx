@@ -1,207 +1,223 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Recipe from "../Recipe";
 import {CalculateRecipe} from "../../Utils/Helpers";
 //import Polzunok from '../Polzunok/Polzunok';
 import "./Calculator.css";
 import { Button as AntButton, Col, InputNumber, Row, Slider } from 'antd';
-
-// const INGREDIENTS = [
-//     {id:'ves', label:'Вес готового продукта гр', value: 0},
-//     {id:'kakao', label:'Какао %', value: 0}, 
-//     {id:'maslo', label:'Какао-масло %', value: 0}, 
-// ]
-//const KAKAOFATPERCENT = 53
-
+import ArchiveOfRecipes from '../ArchiveOfRecipes/ArchiveOfRecipes';
+import { setMl, setVes, setKakao, setMaslo, setPudra } from "../../store/recipeSlicer";
+import { useSelector, useDispatch } from 'react-redux'
 
 export default function Calculator() {
     const [recipe, setRecipe] = useState({});
-    const [ves, setVes] = useState(100);
-    const [kakao, setKakao] = useState(50);
-    const [maslo, setMaslo] = useState(25);
-    const [pudra, setPudra] = useState(25);
+    const [recipes, setRecipes] = useState([]);
+
+    const ml = useSelector(state => state.recipe.ml)
+    const ves = useSelector(state => state.recipe.ves)
+    const kakao = useSelector(state => state.recipe.kakao)
+    const maslo = useSelector(state => state.recipe.maslo)
+    const pudra = useSelector(state => state.recipe.pudra)
+    const dispatch = useDispatch()
 
     const isValid = () => {
         return ves !== 0 && (kakao !== 0 || maslo !== 0 || pudra !== 0);
-    }
-
-    const setCondition = (field) => {
-        const intKakao = +kakao
-        const intMaslo = +maslo
-        const intPudra = +pudra
-        if (field === 'kakao') {
-            const ost = 100 - intKakao
-            const sumOther = intMaslo + intPudra
-            const coef = ost / sumOther
-            intMaslo !== 0 && setMaslo(Math.floor(intMaslo*coef))
-            intPudra !== 0 && setPudra(Math.floor(intPudra*coef))
-            if (intMaslo === 0 && intPudra === 0) {
-                setMaslo(Math.floor(ost/2))
-                setPudra(Math.floor(ost/2))
-            }
-        }
-        if (field === 'maslo') {
-            const ost = 100 - maslo
-            const sumOther = intKakao + intPudra
-            const coef = ost / sumOther
-            intKakao !== 0 && setKakao(Math.floor(intKakao*coef))
-            intPudra !== 0 && setPudra(Math.floor(intPudra*coef))
-            if (intKakao === 0 && intPudra === 0) {
-                setKakao(Math.floor(ost/2))
-                setPudra(Math.floor(ost/2))
-            }
-
-        }
-        if (field === 'pudra') {
-            const ost = 100 - intPudra
-            const sumOther = intMaslo + intKakao
-            const coef = ost / sumOther
-            intKakao !== 0 && setKakao(Math.floor(intKakao*coef))
-            intMaslo !== 0 && setMaslo(Math.floor(intMaslo*coef))
-            if (intKakao === 0 && intMaslo === 0) {
-                setKakao(Math.floor(ost/2))
-                setMaslo(Math.floor(ost/2))
-            }
-        }
-    }
+    }  
 
     const calculate = () => {
+        if (!isValid) return
         setRecipe(CalculateRecipe(ves, kakao, maslo, pudra))
     };
 
+    const saveRecipe = () => {
+        const newRecipe = {
+            key: new Date().getTime(),
+            ves: ves,
+            kakaoPercent: kakao,
+            kakaoVes: recipe.kakao,
+            masloPercent: maslo,
+            masloVes: recipe.maslo,
+            pudraPercent: pudra,
+            pudraVes: recipe.pudra,
+        }
+        const newRecipes = [...recipes, newRecipe]
+        setRecipes(newRecipes)
+        localStorage.setItem('recipes', JSON.stringify(newRecipes))
+    }
+
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(()=>{calculate()}, [ves, kakao, maslo, pudra])
+    useEffect(() => {
+        const item = localStorage.getItem('recipes')
+        if (item === null) return;
+        const recipes = JSON.parse(item)
+        setRecipes(recipes)
+    }, [])
+
+    const deleteRecipe = (key) => {
+        const newRecipeList = recipes.filter((rec) => {
+            return rec.key !== key
+        })
+        setRecipes(newRecipeList)
+        localStorage.setItem('recipes', JSON.stringify(newRecipeList))
+    }
+
     return (
-        <div className="calcContainer" style={{padding:"2rem"}}>
-            <Row>
-                <Col>
-                    <h2>Вес готового продукта: </h2>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <InputNumber
-                        block
-                        min={1}
-                        max={5000}
-                        style={{
-                        margin: '0 16px',
-                        }}
-                        value={ves * 1}
-                        onChange={setVes}
-                    />
-                </Col>  
-                <Col span={8}>
-                    <Slider
-                        min={1}
-                        max={5000}
-                        onChange={setVes}
-                        value={ ves * 1}
-                    />
-                </Col> 
-            </Row>
-            <Row>
-                <Col>
-                    <h2>Какао %: </h2>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <InputNumber
-                        block
-                        min={0}
-                        max={100}
-                        style={{
-                        margin: '0 16px',
-                        }}
-                        value={kakao * 1}
-                        onChange={(value) => {
-                            setKakao(value); 
-                            setCondition('kakao');
-                        }}
-                    />
-                </Col>
-                <Col span={8}>
-                    <Slider
-                        min={0}
-                        max={100}
-                        onChange={(value) => {
-                            setKakao(value); 
-                            setCondition('kakao');
-                        }}
-                        value={ kakao * 1}
-                    />
-                </Col> 
-            </Row>
-            <Row>
-                <Col>
-                    <h2>Какао-масло %: </h2>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <InputNumber
-                        block
-                        min={0}
-                        max={100}
-                        style={{
-                        margin: '0 16px',
-                        }}
-                        value={maslo * 1}
-                        onChange={(value) => {
-                            setMaslo(value); 
-                            setCondition('maslo');
-                        }}
-                    />
-                </Col>
-                <Col span={8}>
-                    <Slider
-                        min={0}
-                        max={100}
-                        onChange={(value) => {
-                            setMaslo(value); 
-                            setCondition('maslo');
-                        }}
-                        value={ maslo * 1}
-                    />
-                </Col> 
-            </Row>
-            <Row>
-                <Col>
-                    <h2>Сахарная пудра %: </h2>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <InputNumber
-                        block
-                        min={0}
-                        max={100}
-                        style={{
-                        margin: '0 16px',
-                        }}
-                        value={pudra * 1}
-                        onChange={(value) => {
-                            setPudra(value); 
-                            setCondition('pudra');
-                        }}
-                    />
-                </Col>
-                <Col span={8}>
-                    <Slider
-                        min={0}
-                        max={100}
-                        onChange={(value) => {
-                            setPudra(value); 
-                            setCondition('pudra');
-                        }}
-                        value={ pudra * 1}
-                    />
-                </Col> 
-            </Row>
-            <AntButton 
-                className="calculateButton" 
-                type="primary" 
-                onClick={calculate} 
-                disabled={!isValid()}>Рассчитать</AntButton>
-            {recipe.kakao && <Recipe data={recipe}/>}                
-        </div>
+        <>
+            <div className="calcContainer" style={{padding:"2rem"}}>
+                <Row>
+                    <Col>
+                        <h2>Перерасчет мл в гр: </h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <InputNumber
+                            min={1}
+                            max={5000}
+                            style={{
+                            margin: '0 16px',
+                            }}
+                            value={ml * 1}
+                            onChange={(val) => { dispatch(setMl(val))}}
+                        />
+                    </Col>  
+                    <Col span={8}>
+                        <Slider
+                            min={1}
+                            max={5000}
+                            onChange={(val) => { dispatch(setMl(val))}}
+                            value={ ml * 1}
+                        />
+                    </Col> 
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Вес готового продукта гр: </h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <InputNumber
+                            min={1}
+                            max={5000}
+                            style={{
+                            margin: '0 16px',
+                            }}
+                            value={ves * 1}
+                            onChange={(val) => { dispatch(setVes(val))}}
+                        />
+                    </Col>  
+                    <Col span={8}>
+                        <Slider
+                            min={1}
+                            max={5000}
+                            onChange={(val) => { dispatch(setVes(val))}}
+                            value={ ves * 1}
+                        />
+                    </Col> 
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Какао %: </h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <InputNumber
+                            
+                            min={0}
+                            max={100}
+                            style={{
+                            margin: '0 16px',
+                            }}
+                            value={kakao * 1}
+                            onChange={(value) => {
+                                dispatch(setKakao(value));
+                            }}
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <Slider
+                            min={0}
+                            max={100}
+                            onChange={(value) => {
+                                dispatch(setKakao(value)); 
+                            }}
+                            value={ kakao * 1}
+                        />
+                    </Col> 
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Какао-масло %: </h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <InputNumber
+                            
+                            min={0}
+                            max={100}
+                            style={{
+                            margin: '0 16px',
+                            }}
+                            value={maslo * 1}
+                            onChange={(value) => {
+                                dispatch(setMaslo(value)); 
+                            }}
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <Slider
+                            min={0}
+                            max={100}
+                            onChange={(value) => {
+                                dispatch(setMaslo(value));
+                            }}
+                            value={ maslo * 1}
+                        />
+                    </Col> 
+                </Row>
+                <Row>
+                    <Col>
+                        <h2>Сахарная пудра %: </h2>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        <InputNumber
+                            
+                            min={0}
+                            max={100}
+                            style={{
+                            margin: '0 16px',
+                            }}
+                            value={pudra * 1}
+                            onChange={(value) => {
+                                dispatch(setPudra(value));
+                            }}
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <Slider
+                            min={0}
+                            max={100}
+                            onChange={(value) => {
+                                dispatch(setPudra(value));
+                            }}
+                            value={ pudra * 1}
+                        />
+                    </Col> 
+                </Row>
+                
+                {recipe.kakao && <Recipe data={recipe}/>}
+                {recipe.kakao && <AntButton 
+                    className="calculateButton" 
+                    type="primary" 
+                    onClick={saveRecipe}>Сохранить</AntButton> 
+                }               
+            </div>
+            <ArchiveOfRecipes recipes={recipes} deleteFn={deleteRecipe}/>
+        </>
     )
 }
